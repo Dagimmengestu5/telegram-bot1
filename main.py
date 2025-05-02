@@ -56,7 +56,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
-    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now(ETHIOPIA_TZ).strftime('%Y-%m-%d %H:%M:%S')
 
     sheet = get_worksheet("Sheet1")
     if sheet:
