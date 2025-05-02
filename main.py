@@ -11,6 +11,10 @@ from telegram.request import HTTPXRequest
 import gspread
 from google.oauth2.service_account import Credentials
 from oauth2client.service_account import ServiceAccountCredentials
+import json
+
+# Read the JSON string from environment variable
+
 
 # === Config ===
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
@@ -25,7 +29,7 @@ WEEKDAY_ORDER = [
     "መልክዐ ኢየሰስ",
     "መዝሙረ ዳዊት"
 ]
-
+google_creds_json = os.getenv("google_key.json")
 # === File System Setup ===
 os.makedirs("መሰረተ ትምሕርት", exist_ok=True)
 for day in WEEKDAY_ORDER:
@@ -34,11 +38,19 @@ os.makedirs("ቤተ ዜማ", exist_ok=True)
 os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 
 # === Google Sheets ===
+import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
 def get_worksheet(sheet_name):
     try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CREDENTIALS_PATH, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
+        # Load from file directly (local dev)
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("google_key.json", scope)
         client = gspread.authorize(creds)
+
         return client.open("Telegram Users").worksheet(sheet_name)
+
     except Exception as e:
         print(f"❌ Google Sheets Error: {e}")
         return None
