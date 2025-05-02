@@ -76,7 +76,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([label])
 
     context.user_data["path_map"] = label_map
-    context.user_data["current_path"] = None  # reset to top
+    context.user_data["current_path"] = None  # reset to top 1
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(f"📂 hey {username} welcome to abenet Education:", reply_markup=reply_markup)
