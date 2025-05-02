@@ -11,8 +11,10 @@ from telegram.request import HTTPXRequest
 import gspread
 from google.oauth2.service_account import Credentials
 from oauth2client.service_account import ServiceAccountCredentials
+
 # === Config ===
-TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
+TOKEN = os.getenv("7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc")  # Telegram token from environment variable
+GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
@@ -34,12 +36,9 @@ os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 # === Google Sheets ===
 def get_worksheet(sheet_name):
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("google_key.json", scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_name(GOOGLE_CREDENTIALS_PATH, ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"])
         client = gspread.authorize(creds)
-
         return client.open("Telegram Users").worksheet(sheet_name)
-
     except Exception as e:
         print(f"❌ Google Sheets Error: {e}")
         return None
@@ -51,7 +50,7 @@ def natural_key(text):
 def pad_text(text, width):
     return text + ("\u2003" * (width - len(text)))
 
-# === Handlers ====-
+# === Handlers ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
@@ -71,7 +70,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     label_map = {}
     keyboard = []
     for folder in main_folders:
-        label = folder  # Remove the emoji here
+        label = folder  # Removed emoji here
         label_map[label] = folder
         keyboard.append([label])
 
@@ -110,21 +109,17 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
         label_map[label] = item
 
     context.user_data["path_map"] = label_map
-    # context.user_data["current_path"] = path
-
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(f"📂 Select from `{path}`:", reply_markup=reply_markup)
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    print(text)
     if text == "Main Menu":
         context.user_data.clear()
-
         label_map = {}
         keyboard = []
         for folder in main_folders:
-            label = f"📁 {folder}"
+            label = folder  # Removed emoji here
             label_map[label] = folder
             keyboard.append([label])
 
@@ -195,7 +190,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                 print(f"❌ Failed to send or log file: {e}")
 
         else:
-                await update.message.reply_text("❌ Not a valid path.")
+            await update.message.reply_text("❌ Not a valid path.")
     else:
         await update.message.reply_text("❌ Invalid option.")
 
@@ -215,6 +210,9 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_file = await context.bot.get_file(file_id)
     await new_file.download_to_drive(custom_path=file_path)
 
+    # Upload file to a cloud storage (optional, if necessary)
+    # Example for uploading to Google Cloud Storage or AWS S3 (not shown here)
+
     await update.message.reply_text(f"✅ File saved to `{file_path}`.")
 
 # === App Runner ===
@@ -228,4 +226,3 @@ if __name__ == '__main__':
 
     print("Bot is running...")
     app.run_polling()
-
