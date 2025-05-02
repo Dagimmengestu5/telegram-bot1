@@ -130,15 +130,13 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             await update.message.reply_text("📂 You're already at the top.")
         return
 
-    if "current_path" not in context.user_data:
+    if 'current_path' not in context.user_data:
         if text in main_folders:
-            context.user_data["current_path"] = text
-            await list_directory(update, context, text)
+            path = text
+            context.user_data['current_path'] = path
+            await list_directory(update, context, path)
         else:
-            keyboard = [[folder] for folder in main_folders]
-            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-            await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
-        return
+            await update.message.reply_text("Please select a main folder first.")
 
     path = context.user_data["current_path"]
     label_map = context.user_data.get("path_map", {})
