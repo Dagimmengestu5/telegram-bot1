@@ -10,7 +10,7 @@ from telegram.request import HTTPXRequest
 
 import gspread
 from google.oauth2.service_account import Credentials
-
+from oauth2client.service_account import ServiceAccountCredentials
 # === Config ===
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
@@ -32,13 +32,14 @@ os.makedirs("ቤተ ዜማ", exist_ok=True)
 os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 
 # === Google Sheets ===
-def get_worksheet(name):
+def get_worksheet(sheet_name):
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file("google_key.json", scopes=scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_name("google_key.json", scope)
         client = gspread.authorize(creds)
-        print(f"✅ Connected to Google Sheet: {name}")
-        return client.open("Telegram Users").worksheet(name)
+
+        return client.open("Telegram Users").worksheet(sheet_name)
+
     except Exception as e:
         print(f"❌ Google Sheets Error: {e}")
         return None
@@ -58,15 +59,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
+    # Log user to Google Sheet
     sheet = get_worksheet("Sheet1")
     if sheet:
         try:
             sheet.append_row([user_id, name, username, timestamp])
-            print("✅ Row added for user.")
         except Exception as e:
-            print(f"❌ Failed to write user to sheet: {e}")
+            print(f"❌ Failed to log user: {e}")
 
-    keyboard = [[folder] for folder in main_folders]
+    # Create label map for folders
+    label_map = {}
+    keyboard = []
+    for folder in main_folders:
+        label = f"📁 {folder}"
+        label_map[label] = folder
+        keyboard.append([label])
+
+    context.user_data["path_map"] = label_map
+    context.user_data["current_path"] = None  # reset to top
+
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(f"📂 hey {username} welcome to abenet Education:", reply_markup=reply_markup)
 
@@ -99,14 +110,14 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
         label_map[label] = item
 
     context.user_data["path_map"] = label_map
-    context.user_data["current_path"] = path
+    # context.user_data["current_path"] = path
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     await update.message.reply_text(f"📂 Select from `{path}`:", reply_markup=reply_markup)
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-
+    print(text)
     if text == "Main Menu":
         context.user_data.clear()
         keyboard = [[folder] for folder in main_folders]
@@ -130,13 +141,17 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             await update.message.reply_text("📂 You're already at the top.")
         return
 
-    if 'current_path' not in context.user_data:
-        if text in main_folders:
-            path = text
-            context.user_data['current_path'] = path
+    if not context.user_data.get("current_path"):
+        label_map = context.user_data.get("path_map", {})
+        selected = label_map.get(text)
+
+        if selected and selected in main_folders:
+            path = selected
+            context.user_data["current_path"] = path
             await list_directory(update, context, path)
         else:
-            await update.message.reply_text("Please select a main folder first.")
+            await update.message.reply_text("❌ Please select a valid main folder.")
+        return
 
     path = context.user_data["current_path"]
     label_map = context.user_data.get("path_map", {})
@@ -151,22 +166,26 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await context.bot.send_document(chat_id=update.effective_chat.id, document=open(next_path, "rb"))
 
-                # Log download to Google Sheet
+                # ✅ Register the download to Google Sheet (Download Log)
                 sheet = get_worksheet("Download Log")
                 if sheet:
                     user = update.effective_user
                     username = user.username or "-"
                     user_id = user.id
-                    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-
                     file_name = os.path.basename(next_path)
                     folder_path = os.path.dirname(next_path)
-                    sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
-                    print("✅ Download logged.")
+                    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+                    try:
+                        sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
+                    except Exception as e:
+                        print(f"❌ Failed to log to Google Sheet: {e}")
+
             except Exception as e:
                 print(f"❌ Failed to send or log file: {e}")
+
         else:
-            await update.message.reply_text("❌ Not a valid path.")
+                await update.message.reply_text("❌ Not a valid path.")
     else:
         await update.message.reply_text("❌ Invalid option.")
 
@@ -199,3 +218,4 @@ if __name__ == '__main__':
 
     print("Bot is running...")
     app.run_polling()
+
