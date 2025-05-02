@@ -11,7 +11,7 @@ from telegram.request import HTTPXRequest
 import gspread
 from google.oauth2.service_account import Credentials
 
-# === Config =====
+# === Config ====
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
