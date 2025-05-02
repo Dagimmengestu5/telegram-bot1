@@ -134,11 +134,24 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
         current = context.user_data.get("current_path")
         if current:
             parent = os.path.dirname(current)
-            if parent in ["", ".", None]:
+
+            # Check if going back from a main folder
+            if current in main_folders or parent in ["", ".", None]:
                 context.user_data.clear()
-                keyboard = [[folder] for folder in main_folders]
+
+                label_map = {}
+                keyboard = []
+                for folder in main_folders:
+                    label = f"📁 {folder}"
+                    label_map[label] = folder
+                    keyboard.append([label])
+
+                context.user_data["path_map"] = label_map
+                context.user_data["current_path"] = None
+
                 reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-                await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
+                await update.message.reply_text("📂 Back to main menu. Please select a folder:",
+                                                reply_markup=reply_markup)
             else:
                 context.user_data["current_path"] = parent
                 await list_directory(update, context, parent)
