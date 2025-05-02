@@ -120,7 +120,17 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
     print(text)
     if text == "Main Menu":
         context.user_data.clear()
-        keyboard = [[folder] for folder in main_folders]
+
+        label_map = {}
+        keyboard = []
+        for folder in main_folders:
+            label = f"📁 {folder}"
+            label_map[label] = folder
+            keyboard.append([label])
+
+        context.user_data["path_map"] = label_map
+        context.user_data["current_path"] = None
+
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
         return
