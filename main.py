@@ -1,15 +1,15 @@
-import os
-import re
-import pytz
-import random
-from datetime import datetime
+# import os
+# import re
+# import pytz
+# import random
+# from datetime import datetime
 
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
-from telegram.request import HTTPXRequest
+# from telegram import Update, ReplyKeyboardMarkup
+# from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
+# from telegram.request import HTTPXRequest
 
-import gspread
-from google.oauth2.service_account import Credentials
+# import gspread
+# from google.oauth2.service_account import Credentials
 
 # === Config ===
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
