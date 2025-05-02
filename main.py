@@ -126,6 +126,7 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
+    print(text)
     if text == "Main Menu":
         context.user_data.clear()
         label_map = {}
