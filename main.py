@@ -2,7 +2,7 @@ import os
 import re
 import pytz
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
@@ -57,7 +57,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
-    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
     # Log user to Google Sheet
     sheet = get_worksheet("Sheet1")
@@ -184,7 +184,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                     user_id = user.id
                     file_name = os.path.basename(next_path)
                     folder_path = os.path.dirname(next_path)
-                    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
                     try:
                         sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
