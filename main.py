@@ -50,13 +50,13 @@ def natural_key(text):
 def pad_text(text, width):
     return text + ("\u2003" * (width - len(text)))
 
-# === Handlers ===
+# === Handlers ====-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
-    timestamp = datetime.now(ETHIOPIA_TZ).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     sheet = get_worksheet("Sheet1")
     if sheet:
@@ -159,7 +159,8 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                     user = update.effective_user
                     username = user.username or "-"
                     user_id = user.id
-                    timestamp = datetime.now(ETHIOPIA_TZ).strftime('%Y-%m-%d %H:%M:%S')
+                    timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
                     file_name = os.path.basename(next_path)
                     folder_path = os.path.dirname(next_path)
                     sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
