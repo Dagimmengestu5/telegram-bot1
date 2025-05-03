@@ -90,7 +90,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["current_path"] = None  # reset to top 1
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(f"📂 hey {name} welcome to abenet Education:\nPlease choose the bottom buttons:", reply_markup=reply_markup)
+    await update.message.reply_text(f"📂 hey {name}👋 welcome to abenet Education:\nPlease choose the bottom buttons:", reply_markup=reply_markup)
 
 async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, path):
     if not os.path.exists(path):
