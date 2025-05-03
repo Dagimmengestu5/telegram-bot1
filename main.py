@@ -181,7 +181,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data["current_path"] = path
             await list_directory(update, context, path)
         else:
-            await update.message.reply_text("❌ Please select a valid main folder.")
+            await update.message.reply_text("❌ Please select a valid main folder or write '/start'.")
         return
 
     path = context.user_data["current_path"]
