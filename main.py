@@ -14,23 +14,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 
 # Read the JSON string from environment variableg
-import os
-import base64
-import json
-from google.oauth2 import service_account
-
-key_base64 = os.environ["GOOGLE_KEY_BASE64"]
-key_data = base64.b64decode(key_base64)
-service_account_info = json.loads(key_data)
-creds = service_account.Credentials.from_service_account_info(service_account_info)
-
-import base64
-
-with open("google_key.json", "rb") as f:
-    encoded = base64.b64encode(f.read()).decode("utf-8")
-
-with open("google_key_base64.txt", "w") as out:
-    out.write(encoded)
 
 
 # === Config ====
@@ -95,7 +78,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"❌ Failed to log user: {e}")
 
-    # Create label map for folders without emojiss
+    # Create label map for folders without emojis
     label_map = {}
     keyboard = []
     for folder in main_folders:
