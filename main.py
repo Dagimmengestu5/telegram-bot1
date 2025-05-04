@@ -78,7 +78,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"❌ Failed to log user: {e}")
 
-    # Create label map for folders without emojis
+    # Create label map for folders without emojiss
     label_map = {}
     keyboard = []
     for folder in main_folders:
