@@ -14,6 +14,16 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 
 # Read the JSON string from environment variableg
+import os
+import base64
+import json
+from google.oauth2 import service_account
+
+key_base64 = os.environ["GOOGLE_KEY_BASE64"]
+key_data = base64.b64decode(key_base64)
+service_account_info = json.loads(key_data)
+creds = service_account.Credentials.from_service_account_info(service_account_info)
+
 import base64
 
 with open("google_key.json", "rb") as f:
