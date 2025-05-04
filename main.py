@@ -20,6 +20,7 @@ import json
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
 GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
+BOT_PASSWORD = ["dagi","droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
     "የዘወትር ፀሎት",
@@ -42,6 +43,8 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+# def normalize_text(text):
+#     return text.strip().replace("\u2003", "").lower()
 def get_worksheet(sheet_name):
     try:
         # Load from file directly (local dev)
@@ -64,13 +67,18 @@ def pad_text(text, width):
 
 # === Handlers ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔒 Please enter the password to access the bot:")
+    context.user_data["auth_step"] = "awaiting_password"
+
+# === Show main folder menu ===
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-    # Log user to Google Sheet
+    # Register user in Google Sheet
     sheet = get_worksheet("Sheet1")
     if sheet:
         try:
@@ -78,19 +86,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"❌ Failed to log user: {e}")
 
-    # Create label map for folders without emojis
     label_map = {}
     keyboard = []
     for folder in main_folders:
-        label = folder  # Removed emoji here
-        label_map[label] = folder
-        keyboard.append([label])
+        label_map[folder] = folder
+        keyboard.append([folder])
 
     context.user_data["path_map"] = label_map
-    context.user_data["current_path"] = None  # reset to top 1
+    context.user_data["current_path"] = None
+    context.user_data["authenticated"] = True
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(f"📂 hey {name}👋 welcome to abenet Education:\nPlease choose the bottom buttons:", reply_markup=reply_markup)
+    await update.message.reply_text(f"✅ Access granted.\n\n📂 Welcome {name}! Please choose a folder:", reply_markup=reply_markup)
 
 async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, path):
     if not os.path.exists(path):
@@ -126,22 +133,38 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    print(text)
-    if text == "Main Menu":
-        context.user_data.clear()
-        label_map = {}
-        keyboard = []
-        for folder in main_folders:
-            label = folder  # Removed emoji here
-            label_map[label] = folder
-            keyboard.append([label])
+    # raw_text = update.message.text
+    # text = normalize_text(raw_text)
 
-        context.user_data["path_map"] = label_map
-        context.user_data["current_path"] = None
-
-        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-        await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
+    # If awaiting password
+    if context.user_data.get("auth_step") == "awaiting_password":
+        if text in [p.lower() for p in BOT_PASSWORD]:
+            context.user_data["auth_step"] = None
+            await show_main_menu(update, context)
+        else:
+            await update.message.reply_text("❌ Incorrect password. Try again.")
         return
+
+    # if not context.user_data.get("authenticated"):
+    #     await update.message.reply_text("🔐 Please authenticate using /start.")
+    #     return
+
+
+    if "Main Menu" == text:
+            context.user_data.clear()
+            label_map = {}
+            keyboard = []
+            for folder in main_folders:
+                label = folder  # Removed emoji here
+                label_map[label] = folder
+                keyboard.append([label])
+
+            context.user_data["path_map"] = label_map
+            context.user_data["current_path"] = None
+
+            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+            await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
+            return
 
     if text == "Back":
         current = context.user_data.get("current_path")
