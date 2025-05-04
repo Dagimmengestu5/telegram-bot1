@@ -20,7 +20,7 @@ import json
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
 GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
-BOT_PASSWORD = ["dagi","droga"]
+BOT_PASSWORD = ["dagi","Dagi","droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
     "የዘወትር ፀሎት",
@@ -139,7 +139,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # If awaiting password
     if context.user_data.get("auth_step") == "awaiting_password":
-        if text in [p.lower() for p in BOT_PASSWORD]:
+        if text in [p for p in BOT_PASSWORD]:
             context.user_data["auth_step"] = None
             await show_main_menu(update, context)
         else:
