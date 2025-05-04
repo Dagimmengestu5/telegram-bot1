@@ -71,6 +71,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["auth_step"] = "awaiting_password"
 
 # === Show main folder menu ===
+import csv
+
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
@@ -78,13 +80,16 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-    # Register user in Google Sheet
-    sheet = get_worksheet("Sheet1")
-    if sheet:
-        try:
-            sheet.append_row([user_id, name, username, timestamp])
-        except Exception as e:
-            print(f"❌ Failed to log user: {e}")
+    # ✅ Log user to local CSV
+    try:
+        file_exists = os.path.isfile("users.csv")
+        with open("users.csv", mode="a", newline='', encoding="utf-8") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["User ID", "Name", "Username", "Timestamp"])
+            writer.writerow([user_id, name, username, timestamp])
+    except Exception as e:
+        print(f"❌ Failed to log to CSV: {e}")
 
     label_map = {}
     keyboard = []
@@ -221,9 +226,8 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await context.bot.send_document(chat_id=update.effective_chat.id, document=open(next_path, "rb"))
 
-                # ✅ Register the download to Google Sheet (Download Log)
-                sheet = get_worksheet("Download Log")
-                if sheet:
+                # ✅ Log download to local CSV
+                try:
                     user = update.effective_user
                     username = user.username or "-"
                     user_id = user.id
@@ -231,16 +235,22 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                     folder_path = os.path.dirname(next_path)
                     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-                    try:
-                        sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
-                    except Exception as e:
-                        print(f"❌ Failed to log to Google Sheet: {e}")
+                    file_exists = os.path.isfile("downloads.csv")
+                    with open("downloads.csv", mode="a", newline='', encoding="utf-8") as f:
+                        writer = csv.writer(f)
+                        if not file_exists:
+                            writer.writerow(["User ID", "Username", "File Name", "Folder", "Timestamp"])
+                        writer.writerow([str(user_id), username, file_name, folder_path, timestamp])
+                except Exception as e:
+                    print(f"❌ Failed to log to downloads.csv: {e}")
 
             except Exception as e:
                 print(f"❌ Failed to send or log file: {e}")
 
-        else:
-            await update.message.reply_text("❌ Not a valid path.")
+
+    # else:
+    #         await update.message.reply_text("❌ Not a valid path.")
+    #
     else:
         await update.message.reply_text("❌ Invalid option.")
 
