@@ -135,6 +135,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
     text = update.message.text
     # raw_text = update.message.text
     # text = normalize_text(raw_text)
+    print(text)
 
     # If awaiting password
     if context.user_data.get("auth_step") == "awaiting_password":
