@@ -1,5 +1,6 @@
 import os
 import re
+import csv
 import pytz
 import random
 from datetime import datetime, timezone
@@ -8,19 +9,12 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
 from telegram.request import HTTPXRequest
 
-import gspread
-from google.oauth2.service_account import Credentials
-from oauth2client.service_account import ServiceAccountCredentials
-import json
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
-# Read the JSON string from environment variablegs
-
-
-# === Config ====
-TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
-GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
-ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
-BOT_PASSWORD = ["dagi","Dagi","droga"]
+# === Telegram Config ===
+TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
+BOT_PASSWORD = ["dagi", "Dagi", "droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
     "የዘወትር ፀሎት",
@@ -30,7 +24,7 @@ WEEKDAY_ORDER = [
     "መልክዐ ኢየሰስ",
     "መዝሙረ ዳዊት"
 ]
-google_creds_json = os.getenv("google_key.json")
+
 # === File System Setup ===
 os.makedirs("መሰረተ ትምሕርት", exist_ok=True)
 for day in WEEKDAY_ORDER:
@@ -38,27 +32,27 @@ for day in WEEKDAY_ORDER:
 os.makedirs("ቤተ ዜማ", exist_ok=True)
 os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 
-# === Google Sheets ===
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+# === Google Drive Setup ===
+gauth = GoogleAuth()
+gauth.LocalWebserverAuth()
+drive = GoogleDrive(gauth)
+FOLDER_ID = "1ZyYKgKcQSrrTTMDuNY8zYafGBjMWSKH6"  # Replace this
 
-# def normalize_text(text):
-#     return text.strip().replace("\u2003", "").lower()
-def get_worksheet(sheet_name):
+def upload_csv_to_drive(filename, folder_id):
     try:
-        # Load from file directly (local dev)
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("google_key.json", scope)
-        client = gspread.authorize(creds)
-
-        return client.open("Telegram Users").worksheet(sheet_name)
-
+        file_list = drive.ListFile({'q': f"'{folder_id}' in parents and title='{filename}' and trashed=false"}).GetList()
+        if file_list:
+            file_drive = file_list[0]
+            file_drive.SetContentFile(filename)
+            file_drive.Upload()
+        else:
+            file_drive = drive.CreateFile({'title': filename, 'parents': [{'id': folder_id}]})
+            file_drive.SetContentFile(filename)
+            file_drive.Upload()
     except Exception as e:
-        print(f"❌ Google Sheets Error: {e}")
-        return None
+        print(f"❌ Failed to upload to Google Drive: {e}")
 
-# === Helpers ====
+# === Utility ===
 def natural_key(text):
     return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', text)]
 
@@ -70,9 +64,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔒 Please enter the password to access the bot:")
     context.user_data["auth_step"] = "awaiting_password"
 
-# === Show main folder menu ===
-import csv
-
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
@@ -80,16 +71,14 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-    # ✅ Log user to local CSV
-    try:
-        file_exists = os.path.isfile("users.csv")
-        with open("users.csv", mode="a", newline='', encoding="utf-8") as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(["User ID", "Name", "Username", "Timestamp"])
-            writer.writerow([user_id, name, username, timestamp])
-    except Exception as e:
-        print(f"❌ Failed to log to CSV: {e}")
+    # Log to CSV and upload
+    file_exists = os.path.isfile("users.csv")
+    with open("users.csv", "a", newline='', encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(["User ID", "Name", "Username", "Timestamp"])
+        writer.writerow([user_id, name, username, timestamp])
+    upload_csv_to_drive("users.csv", FOLDER_ID)
 
     label_map = {}
     keyboard = []
@@ -138,62 +127,25 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    # raw_text = update.message.text
-    # text = normalize_text(raw_text)
     print(text)
-
-    # If awaiting password
     if context.user_data.get("auth_step") == "awaiting_password":
-        if text in [p for p in BOT_PASSWORD]:
+        if text in BOT_PASSWORD:
             context.user_data["auth_step"] = None
             await show_main_menu(update, context)
         else:
             await update.message.reply_text("❌ Incorrect password. Try again.")
         return
 
-    # if not context.user_data.get("authenticated"):
-    #     await update.message.reply_text("🔐 Please authenticate using /start.")
-    #     return
-
-
-    if "Main Menu" == text:
-            context.user_data.clear()
-            label_map = {}
-            keyboard = []
-            for folder in main_folders:
-                label = folder  # Removed emoji here
-                label_map[label] = folder
-                keyboard.append([label])
-
-            context.user_data["path_map"] = label_map
-            context.user_data["current_path"] = None
-
-            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-            await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
-            return
+    if text == "Main Menu":
+        await show_main_menu(update, context)
+        return
 
     if text == "Back":
         current = context.user_data.get("current_path")
         if current:
             parent = os.path.dirname(current)
-
-            # Check if going back from a main folder
             if current in main_folders or parent in ["", ".", None]:
-                context.user_data.clear()
-
-                label_map = {}
-                keyboard = []
-                for folder in main_folders:
-                    label = f"📁 {folder}"
-                    label_map[label] = folder
-                    keyboard.append([label])
-
-                context.user_data["path_map"] = label_map
-                context.user_data["current_path"] = None
-
-                reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-                await update.message.reply_text("📂 Back to main menu. Please select a folder:",
-                                                reply_markup=reply_markup)
+                await show_main_menu(update, context)
             else:
                 context.user_data["current_path"] = parent
                 await list_directory(update, context, parent)
@@ -204,7 +156,6 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not context.user_data.get("current_path"):
         label_map = context.user_data.get("path_map", {})
         selected = label_map.get(text)
-
         if selected and selected in main_folders:
             path = selected
             context.user_data["current_path"] = path
@@ -226,33 +177,25 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await context.bot.send_document(chat_id=update.effective_chat.id, document=open(next_path, "rb"))
 
-                # ✅ Log download to local CSV
-                try:
-                    user = update.effective_user
-                    username = user.username or "-"
-                    user_id = user.id
-                    file_name = os.path.basename(next_path)
-                    folder_path = os.path.dirname(next_path)
-                    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                user = update.effective_user
+                username = user.username or "-"
+                user_id = user.id
+                file_name = os.path.basename(next_path)
+                folder_path = os.path.dirname(next_path)
+                timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-                    file_exists = os.path.isfile("downloads.csv")
-                    with open("downloads.csv", mode="a", newline='', encoding="utf-8") as f:
-                        writer = csv.writer(f)
-                        if not file_exists:
-                            writer.writerow(["User ID", "Username", "File Name", "Folder", "Timestamp"])
-                        writer.writerow([str(user_id), username, file_name, folder_path, timestamp])
-                except Exception as e:
-                    print(f"❌ Failed to log to downloads.csv: {e}")
+                file_exists = os.path.isfile("downloads.csv")
+                with open("downloads.csv", mode="a", newline='', encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    if not file_exists:
+                        writer.writerow(["User ID", "Username", "File Name", "Folder", "Timestamp"])
+                    writer.writerow([str(user_id), username, file_name, folder_path, timestamp])
+                upload_csv_to_drive("downloads.csv", FOLDER_ID)
 
             except Exception as e:
                 print(f"❌ Failed to send or log file: {e}")
-
-
-    # else:
-    #         await update.message.reply_text("❌ Not a valid path.")
-    #
-    else:
-        await update.message.reply_text("❌ Invalid option.")
+        else:
+            await update.message.reply_text("❌ Invalid option.")
 
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if "current_path" not in context.user_data:
@@ -266,13 +209,8 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file_path = os.path.join(current_path, file_name)
 
     await update.message.reply_text("⏫ Uploading file...")
-
     new_file = await context.bot.get_file(file_id)
     await new_file.download_to_drive(custom_path=file_path)
-
-    # Upload file to a cloud storage (optional, if necessary)
-    # Example for uploading to Google Cloud Storage or AWS S3 (not shown here)
-
     await update.message.reply_text(f"✅ File saved to `{file_path}`.")
 
 # === App Runner ===
