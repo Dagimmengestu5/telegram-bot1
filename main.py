@@ -11,6 +11,8 @@ from telegram.request import HTTPXRequest
 
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from pydrive2.auth import GoogleAuth
+
 
 # === Telegram Config ===
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
