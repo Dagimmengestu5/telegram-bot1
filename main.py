@@ -39,7 +39,7 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
 gauth = GoogleAuth()
-gauth.LoadServiceConfigFile("service_account.json")
+gauth.LoadServiceConfigFile("client_secrets.json")
 drive = GoogleDrive(gauth)
 
 # gauth = GoogleAuth()
