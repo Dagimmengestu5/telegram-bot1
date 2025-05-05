@@ -2,7 +2,7 @@ import os
 import re
 import csv
 
-import EAT
+from pytz import timezone
 import pytz
 import random
 from datetime import datetime, timezone
@@ -15,6 +15,7 @@ from telegram.request import HTTPXRequest
 
 # === Telegram Config ====
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
+EAT = pytz.timezone("Africa/Addis_Ababa")
 BOT_PASSWORD = ["dagi", "Dagi", "droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
