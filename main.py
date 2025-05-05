@@ -35,9 +35,16 @@ os.makedirs("ቤተ ዜማ", exist_ok=True)
 os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 
 # === Google Drive Setup ===
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+
 gauth = GoogleAuth()
-gauth.LocalWebserverAuth()
+gauth.LoadServiceConfigFile("service_account.json")
 drive = GoogleDrive(gauth)
+
+# gauth = GoogleAuth()
+# gauth.LocalWebserverAuth()
+# drive = GoogleDrive(gauth)
 FOLDER_ID = "1ZyYKgKcQSrrTTMDuNY8zYafGBjMWSKH6"  # Replace this
 
 def upload_csv_to_drive(filename, folder_id):
