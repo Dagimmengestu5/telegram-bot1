@@ -14,7 +14,7 @@ from pydrive.drive import GoogleDrive
 from pydrive2.auth import GoogleAuth
 
 
-# === Telegram Config ===
+# === Telegram Config ====
 TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"
 BOT_PASSWORD = ["dagi", "Dagi", "droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
