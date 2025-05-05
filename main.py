@@ -17,7 +17,7 @@ import json
 
 
 # === Config ====
-TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
+TOKEN = "7945188969:AAHeIHDGvAi0EZAZCjtz_w1TuwKbqkYvz2Q"  # Telegram token from environment variable
 GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 BOT_PASSWORD = ["dagi","Dagi","droga"]
