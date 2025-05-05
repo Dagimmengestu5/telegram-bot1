@@ -1,6 +1,8 @@
 import os
 import re
 import csv
+
+import EAT
 import pytz
 import random
 from datetime import datetime, timezone
@@ -9,9 +11,6 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
 from telegram.request import HTTPXRequest
 
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-from pydrive2.auth import GoogleAuth
 
 
 # === Telegram Config ====
@@ -39,8 +38,9 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
 gauth = GoogleAuth()
-gauth.LoadServiceConfigFile("client_secrets.json")
+gauth.LoadServiceAccountCredentials()
 drive = GoogleDrive(gauth)
+
 
 # gauth = GoogleAuth()
 # gauth.LocalWebserverAuth()
@@ -78,7 +78,7 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
-    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.now(EAT).strftime('%Y-%m-%d %H:%M:%S')
 
     # Log to CSV and upload
     file_exists = os.path.isfile("users.csv")
@@ -191,7 +191,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                 user_id = user.id
                 file_name = os.path.basename(next_path)
                 folder_path = os.path.dirname(next_path)
-                timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.now(EAT).strftime('%Y-%m-%d %H:%M:%S')
 
                 file_exists = os.path.isfile("downloads.csv")
                 with open("downloads.csv", mode="a", newline='', encoding="utf-8") as f:
