@@ -13,7 +13,7 @@ from google.oauth2.service_account import Credentials
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 
-# Read the JSON string from environment variablegs
+# Read the JSON string from environment variableg
 
 import os
 from dotenv import load_dotenv
