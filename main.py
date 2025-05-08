@@ -37,7 +37,7 @@ for day in WEEKDAY_ORDER:
 os.makedirs("ቤተ ዜማ", exist_ok=True)
 os.makedirs("ሥርዓተ ቅዳሴ", exist_ok=True)
 
-# === Google Sheets ===
+# === Google Sheets ====
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
