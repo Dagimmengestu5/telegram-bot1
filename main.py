@@ -63,7 +63,7 @@ def get_worksheet(sheet_name):
         print(f"❌ Google Sheets Error: {e}")
         return None
 
-# === Helpers ===
+# === Helpers ==
 def natural_key(text):
     return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', text)]
 
