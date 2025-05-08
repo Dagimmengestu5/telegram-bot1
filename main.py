@@ -15,6 +15,12 @@ import json
 
 # Read the JSON string from environment variablegs
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load from .env
+
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # === Config ====
 TOKEN = "7945188969:AAHeIHDGvAi0EZAZCjtz_w1TuwKbqkYvz2Q"  # Telegram token from environment variable
@@ -275,7 +281,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"✅ File saved to `{file_path}`.")
 
-# === App Runner ====
+# === App Runner ==
 if __name__ == '__main__':
     request = HTTPXRequest(connect_timeout=300.0, read_timeout=300.0)
     app = ApplicationBuilder().token(TOKEN).request(request).build()
