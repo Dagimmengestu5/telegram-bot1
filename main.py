@@ -15,11 +15,17 @@ import json
 
 # Read the JSON string from environment variableg
 
+import os
+from dotenv import load_dotenv
 
-# === Config ===
-TOKEN = "7945188969:AAGqv31lZK0YaRjVTDqBXgTiCJyt1hyICnc"  # Telegram token from environment variable
+load_dotenv()  # Load from .env
+
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+# === Config ====
 GOOGLE_CREDENTIALS_PATH = os.getenv("google_key.json")  # Google credentials from environment variable
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
+BOT_PASSWORD = ["dagi","Dagi","droga"]
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = [
     "የዘወትር ፀሎት",
@@ -42,6 +48,8 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+# def normalize_text(text):
+#     return text.strip().replace("\u2003", "").lower()
 def get_worksheet(sheet_name):
     try:
         # Load from file directly (local dev)
@@ -55,7 +63,7 @@ def get_worksheet(sheet_name):
         print(f"❌ Google Sheets Error: {e}")
         return None
 
-# === Helpers ====
+# === Helpers ===
 def natural_key(text):
     return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', text)]
 
@@ -64,33 +72,42 @@ def pad_text(text, width):
 
 # === Handlers ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔒 Please enter the password to access the bot:")
+    context.user_data["auth_step"] = "awaiting_password"
+
+# === Show main folder menu ===
+import csv
+
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
     username = user.username or "-"
     user_id = user.id
     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-    # Log user to Google Sheet
-    sheet = get_worksheet("Sheet1")
-    if sheet:
-        try:
-            sheet.append_row([user_id, name, username, timestamp])
-        except Exception as e:
-            print(f"❌ Failed to log user: {e}")
+    # ✅ Log user to local CSV
+    try:
+        file_exists = os.path.isfile("users.csv")
+        with open("users.csv", mode="a", newline='', encoding="utf-8") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["User ID", "Name", "Username", "Timestamp"])
+            writer.writerow([user_id, name, username, timestamp])
+    except Exception as e:
+        print(f"❌ Failed to log to CSV: {e}")
 
-    # Create label map for folders without emojis
     label_map = {}
     keyboard = []
     for folder in main_folders:
-        label = folder  # Removed emoji here
-        label_map[label] = folder
-        keyboard.append([label])
+        label_map[folder] = folder
+        keyboard.append([folder])
 
     context.user_data["path_map"] = label_map
-    context.user_data["current_path"] = None  # reset to top 1
+    context.user_data["current_path"] = None
+    context.user_data["authenticated"] = True
 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(f"📂 hey {name} welcome to abenet Education:", reply_markup=reply_markup)
+    await update.message.reply_text(f"✅ Access granted.\n\n📂 Welcome {name}! Please choose a folder:", reply_markup=reply_markup)
 
 async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, path):
     if not os.path.exists(path):
@@ -126,22 +143,39 @@ async def list_directory(update: Update, context: ContextTypes.DEFAULT_TYPE, pat
 
 async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
+    # raw_text = update.message.text
+    # text = normalize_text(raw_text)
     print(text)
-    if text == "Main Menu":
-        context.user_data.clear()
-        label_map = {}
-        keyboard = []
-        for folder in main_folders:
-            label = folder  # Removed emoji here
-            label_map[label] = folder
-            keyboard.append([label])
 
-        context.user_data["path_map"] = label_map
-        context.user_data["current_path"] = None
-
-        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-        await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
+    # If awaiting password n
+    if context.user_data.get("auth_step") == "awaiting_password":
+        if text in [p for p in BOT_PASSWORD]:
+            context.user_data["auth_step"] = None
+            await show_main_menu(update, context)
+        else:
+            await update.message.reply_text("❌ Incorrect password. Try again.")
         return
+
+    # if not context.user_data.get("authenticated"):
+    #     await update.message.reply_text("🔐 Please authenticate using /start.")
+    #     return
+
+
+    if "Main Menu" == text:
+            context.user_data.clear()
+            label_map = {}
+            keyboard = []
+            for folder in main_folders:
+                label = folder  # Removed emoji here
+                label_map[label] = folder
+                keyboard.append([label])
+
+            context.user_data["path_map"] = label_map
+            context.user_data["current_path"] = None
+
+            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+            await update.message.reply_text("📂 Please select a folder to begin:", reply_markup=reply_markup)
+            return
 
     if text == "Back":
         current = context.user_data.get("current_path")
@@ -181,7 +215,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data["current_path"] = path
             await list_directory(update, context, path)
         else:
-            await update.message.reply_text("❌ Please select a valid main folder.")
+            await update.message.reply_text("❌ Please select a valid main folder or write '/start'.")
         return
 
     path = context.user_data["current_path"]
@@ -197,9 +231,8 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
             try:
                 await context.bot.send_document(chat_id=update.effective_chat.id, document=open(next_path, "rb"))
 
-                # ✅ Register the download to Google Sheet (Download Log)
-                sheet = get_worksheet("Download Log")
-                if sheet:
+                # ✅ Log download to local CSV
+                try:
                     user = update.effective_user
                     username = user.username or "-"
                     user_id = user.id
@@ -207,16 +240,22 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                     folder_path = os.path.dirname(next_path)
                     timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-                    try:
-                        sheet.append_row([str(user_id), username, file_name, folder_path, timestamp])
-                    except Exception as e:
-                        print(f"❌ Failed to log to Google Sheet: {e}")
+                    file_exists = os.path.isfile("downloads.csv")
+                    with open("downloads.csv", mode="a", newline='', encoding="utf-8") as f:
+                        writer = csv.writer(f)
+                        if not file_exists:
+                            writer.writerow(["User ID", "Username", "File Name", "Folder", "Timestamp"])
+                        writer.writerow([str(user_id), username, file_name, folder_path, timestamp])
+                except Exception as e:
+                    print(f"❌ Failed to log to downloads.csv: {e}")
 
             except Exception as e:
                 print(f"❌ Failed to send or log file: {e}")
 
-        else:
-            await update.message.reply_text("❌ Not a valid path.")
+
+    # else:
+    #         await update.message.reply_text("❌ Not a valid path.")
+    #
     else:
         await update.message.reply_text("❌ Invalid option.")
 
@@ -241,7 +280,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"✅ File saved to `{file_path}`.")
 
-# === App Runner ===
+# === App Runner ==
 if __name__ == '__main__':
     request = HTTPXRequest(connect_timeout=300.0, read_timeout=300.0)
     app = ApplicationBuilder().token(TOKEN).request(request).build()
