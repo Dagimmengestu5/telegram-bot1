@@ -31,7 +31,7 @@ ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
 WEEKDAY_ORDER = ["የዘወትር ፀሎት", "ውዳሴ ማርያም", "አንቀፀ ብርሃን", "መልክዐ ማርያም", "መልክዐ ኢየሰስ", "መዝሙረ ዳዊት"]
 
-# === Setup file system folders ===
+# === Setup file system folders ==
 os.makedirs("መሰረተ ትምሕርት", exist_ok=True)
 for day in WEEKDAY_ORDER:
     os.makedirs(os.path.join("መሰረተ ትምሕርት", day), exist_ok=True)
