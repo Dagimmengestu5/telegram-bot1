@@ -24,7 +24,7 @@ load_dotenv()
 
 # === Bot Config ===
 TOKEN = os.getenv("TELEGRAM_TOKEN")
-BOT_PASSWORD = ["dagi", "Dagi", "droga"]
+BOT_PASSWORD = ["dagi", "Dagi", "mekane heywet","Mekane heywet", "Mekane Heywet", "MEKANE HEYWET", "መካነ ሕይወት", "መካነ ህይወት", 2017 ,]
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
