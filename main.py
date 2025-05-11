@@ -48,8 +48,6 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# def normalize_text(text):
-#     return text.strip().replace("\u2003", "").lower()
 def get_worksheet(sheet_name):
     try:
         # Load from file directly (local dev)
