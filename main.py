@@ -24,7 +24,8 @@ load_dotenv()
 
 # === Bot Config ===
 TOKEN = os.getenv("TELEGRAM_TOKEN")
-BOT_PASSWORD = ["dagi", "Dagi", "droga"]
+BOT_PASSWORD = ["dagi", "Dagi", "mekane heywet", "mekaneheywet", "Mekane heywet", "Mekane Heywet",
+                "MEKANE HEYWET", "መካነ ሕይወት", "መካነ ህይወት", "መካነሕይወት", "2017"]
 ETHIOPIA_TZ = pytz.timezone("Africa/Addis_Ababa")
 
 main_folders = ["መሰረተ ትምሕርት", "ቤተ ዜማ", "ሥርዓተ ቅዳሴ"]
@@ -77,6 +78,22 @@ def log_registration(user, phone_number):
 
         worksheet.append_row([str(user_id), full_name, username, phone_number, date, time])
         print("✅ Registration logged to Google Sheets.")
+    except Exception as e:
+        print(f"❌ Google Sheets Logging Error: {e}")
+def log_download_to_sheets(user, file_name, folder_path):
+    try:
+        sheet = get_worksheet("Downloads")
+        if sheet is None:
+            print("❌ Google Sheets Logging Error: Worksheet not found")
+            return
+
+        username = user.username or "N/A"
+        now = datetime.now(pytz.timezone("Africa/Addis_Ababa"))
+        date = now.strftime("%Y-%m-%d")
+        time = now.strftime("%H:%M:%S")
+
+        sheet.append_row([str(user.id), username, file_name, folder_path, date, time])
+        print("✅ Download logged to Google Sheets.")
     except Exception as e:
         print(f"❌ Google Sheets Logging Error: {e}")
 
@@ -212,6 +229,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
     text = update.message.text
     print(text)
 
+
     if context.user_data.get("auth_step") == "awaiting_password":
         if text in BOT_PASSWORD:
             context.user_data["auth_step"] = None
@@ -283,6 +301,7 @@ async def handle_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE
                 folder_path = os.path.dirname(next_path)
                 timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
                 file_exists = os.path.isfile("downloads.csv")
+                log_download_to_sheets(user, file_name, folder_path)
                 with open("downloads.csv", "a", newline='', encoding="utf-8") as f:
                     writer = csv.writer(f)
                     if not file_exists:
