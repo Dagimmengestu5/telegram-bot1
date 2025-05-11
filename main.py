@@ -145,7 +145,7 @@ def natural_key(text):
 def pad_text(text, width):
     return text + ("\u2003" * (width - len(text)))
 
-# === Folder Navigation and File Handlers ===
+# === Folder Navigation and File Handlers ====
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name
